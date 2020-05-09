@@ -1,0 +1,40 @@
+{
+	"comment": "Load Hulu and play something.",
+	"actions": [
+		{
+			"comment": "Go home.",
+			"action": "press",
+			"buttons": ["Home"]
+		},
+		{
+			"comment": "Make sure that we're home.",
+			"action": "sleep",
+			"duration": 1000
+		},
+		{
+			"comment": "Launch Hulu.",
+			"action": "app",
+			"name": "Hulu"
+		},
+		{
+			"comment": "Let Hulu load.",
+			"action": "sleep",
+			"duration": 8000
+		},
+		{
+			"comment": "Pick the first account.",
+			"action": "press",
+			"buttons": ["Select"]
+		},
+		{
+			"comment": "Wait for the account to load.",
+			"action": "sleep",
+			"duration": 6000
+		},
+		{
+			"comment": "Pick whatever the first thing is.",
+			"action": "press",
+			"buttons": ["Select"]
+		}
+	]
+}
