@@ -39,7 +39,16 @@ if(files.length == 0) {
 	process.exit(1);
 }
 
-function findDevice(name) {
+/**
+ * findDevice returns the device with the given name.
+ *
+ * @param name The exact name of the device to search for.
+ * @param timeout An optional timeout, in milliseconds.
+ *
+ * @return The nodecast device.
+ */
+async function findDevice(name, timeout) {
+	let deviceFound = false;
 	return new Promise((resolve, reject) => {
 		let devices = nodecast.find();
 		devices.on('device', device => {
@@ -47,16 +56,72 @@ function findDevice(name) {
 			console.log("Found device:", device.name);
 
 			if(device.name === name) {
+				deviceFound = true;
 				devices.end();
-				
 				resolve(device);
 			}
 		});
+
+		if(timeout > 0) {
+			setTimeout(() => {
+				if(!deviceFound) {
+					reject(new Error("Could not find device after "+timeout+"ms."));
+				}
+			}, timeout);
+		}
 	});
 }
 
+/**
+ * runScript runs the given script on the device.
+ *
+ * @param device The device returned by `findDevice`.
+ * @param script The script to run.
+ */
+async function runScript(device, script) {
+	if(script.comment) {
+		console.log("~~~", script.comment, "~~~");
+	}
+	for(let a = 0; a < script.actions.length; a++) {
+		let action = script.actions[a];
+		if(action.comment) {
+			console.log("~", action.comment, "~");
+		}
+		let promise = new Promise((resolve, reject) => {
+			console.log("Action:", action.action);
+			switch(action.action) {
+				case "app":
+					let app = device.app('Hulu');
+					let data = null;
+					app.start(data, err => {
+						if(err) {
+							console.warn("Error starting app:", err);
+							reject(new Error("Error starting app: "+err));
+						}
+						resolve();
+					});
+					break;
+				case "sleep":
+					console.log("Duration:", action.duration);
+					setTimeout(() => resolve(), action.duration);
+					break;
+				case "press":
+					device.press(action.buttons, () => resolve());
+					break;
+				default:
+					console.error("Unknown action:", action.action);
+					reject(new Error("Unknown action: "+action.action));
+			}
+		});
+		console.log("Waiting...");
+		await promise;
+		console.log("Waited.");
+	}
+}
+
+
 async function main() {
-	let device = await findDevice(targetDeviceName)
+	let device = await findDevice(targetDeviceName, 10*1000);
 	console.log("Running on device:", device.name);
 
 	for(let f = 0; f < files.length; f++) {
@@ -66,45 +131,8 @@ async function main() {
 		let contents = fs.readFileSync(filename);
 		let payload = JSON.parse(contents);
 
-		if(payload.comment) {
-			console.log("~~~", payload.comment, "~~~");
-		}
-		for(let a = 0; a < payload.actions.length; a++) {
-			let action = payload.actions[a];
-			if(action.comment) {
-				console.log("~", action.comment, "~");
-			}
-			let promise = new Promise((resolve, reject) => {
-				console.log("Action:", action.action);
-				switch(action.action) {
-					case "app":
-						let app = device.app('Hulu');
-						let data = null;
-						app.start(data, err => {
-							if(err) {
-								console.warn("Error starting app:", err);
-								reject(new Error("Error starting app: "+err));
-							}
-							resolve();
-						});
-						break;
-					case "sleep":
-						console.log("Duration:", action.duration);
-						setTimeout(() => resolve(), action.duration);
-						break;
-					case "press":
-						device.press(action.buttons, () => resolve());
-						break;
-					default:
-						console.error("Unknown action:", action.action);
-						reject(new Error("Unknown action: "+action.action));
-				}
-			});
-			console.log("Waiting...");
-			await promise;
-			console.log("Waited.");
-		};
-	};
+		await runScript(device, payload);
+	}
 }
 
 (async () => {
@@ -113,7 +141,8 @@ async function main() {
 		await main()
 		console.log("All done.");
 	} catch(err) {
-		console.error("Error:", err);
+		console.error("Encountered an error:", err);
+		process.exit(1);
 	}
 })();
 

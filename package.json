@@ -1,0 +1,11 @@
+{
+	"name": "roku-scripter",
+	"version": "0.1.0",
+	"homepage": "https://github.com/tekkamanendless/roku-scripter",
+	"bugs": {
+		"url": "https://github.com/tekkamanendless/roku-scripter/issues"
+	},
+	"files": [
+		"main.js"
+	],
+}
