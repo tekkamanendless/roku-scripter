@@ -8,4 +8,7 @@
 	"files": [
 		"main.js"
 	],
+	"dependencies": {
+		"nodecast": "^1.0.1"
+	}
 }
