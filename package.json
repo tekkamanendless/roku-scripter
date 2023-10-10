@@ -9,6 +9,7 @@
 		"main.js"
 	],
 	"dependencies": {
+		"minimist": "^1.2.8",
 		"nodecast": "^1.0.1"
 	}
 }
